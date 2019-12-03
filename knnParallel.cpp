@@ -7,6 +7,7 @@
 #include <algorithm>
 #include <vector>
 #include <omp.h>
+#include <parallel/algorithm>
 
 struct Point {
   int val; // value of point
@@ -20,31 +21,48 @@ bool distanceComparison(Point a, Point b){
 
 // parallelizable
 void euclideanDistance(std::vector<Point> &arr, int size, Point p){
+  //#pragma omp parallel for schedule(auto)
   for (int i=0;i<size;i++){
     arr[i].distance = std::sqrt((arr[i].x - p.x) * (arr[i].x - p.x) +
                                  (arr[i].y - p.y) * (arr[i].y - p.y));
   }
+
 }
 
 int KNN(std::vector<Point> &trainingArray, int trainingArraySize, int k, Point newPoint){
+  // omp_lock_t writelock;
+  // omp_init_lock(&writelock);
 
   euclideanDistance(trainingArray, trainingArraySize, newPoint);
 
-  sort(trainingArray.begin(), trainingArray.end(), distanceComparison);
+  // uses OpenMP to parallelize the built-in sorting alogrithm
+  // __gnu_parallel forces the parallelized version to be used
+  clock_t begin, end;
+  begin = clock();
+  __gnu_parallel::sort(trainingArray.begin(), trainingArray.end(), distanceComparison);
+  end = clock();
+  std::cout << "parallel sort time: " << ((float)(end - begin)/CLOCKS_PER_SEC) << " seconds" << std::endl;
 
   int freqNegOne = 0;
   int freqZero = 0;
   int freqOne = 0;
-  // maybe parallelizable? based on k
+
+  // #pragma omp parallel for schedule(auto)
   for (int i=0; i < k; i++){
     if (trainingArray[i].val == -1) {
+      // omp_set_lock(&writelock);
       freqNegOne++;
+      // omp_unset_lock(&writelock);
     }
     else if (trainingArray[i].val == 0) {
+      // omp_set_lock(&writelock);
       freqZero++;
+      // omp_unset_lock(&writelock);
     }
     else if (trainingArray[i].val == 1) {
+      // omp_set_lock(&writelock);
       freqOne++;
+      // omp_unset_lock(&writelock);
     }
   }
   if (freqNegOne > freqZero && freqNegOne > freqOne){
@@ -89,21 +107,25 @@ int main() {
     trainingVector.push_back(p);
   }
 
-  clock_t begin = clock();
+  // could parallelize if a new trainingVector was made for each euclidean distance
+  // but that would also slow down the program, and take up more memory
 
-  //#pragma omp parallel for num_threads(2)
+  clock_t begin, end;
   for (int i=0;i<dataVector.size();i++){
-    int newLabel = KNN(trainingVector, trainingVector.size(), 10, dataVector[i]);
+    begin = clock();
+    int newLabel = KNN(trainingVector, trainingVector.size(), 1000, dataVector[i]);
+    end = clock();
+    std::cout << "Parallel time for k=1000: " << ((float)(end - begin)/CLOCKS_PER_SEC) << " seconds" << std::endl;
+
     dataVector[i].val = newLabel;
   }
 
-  clock_t end = clock();
-
-  std::cout << "Parallel time for 12 points: " << ((float)(end - begin)/CLOCKS_PER_SEC) << " seconds" << std::endl;
-
+  // use to check for correctness
+  /*
   for (int i=0; i < dataVector.size();i++){
     std::cout << dataVector[i].val << std::endl;
   }
+  */
 
   return 0;
 }

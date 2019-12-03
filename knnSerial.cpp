@@ -26,15 +26,22 @@ void euclideanDistance(std::vector<Point> &arr, int size, Point p){
 }
 
 int KNN(std::vector<Point> &trainingArray, int trainingArraySize, int k, Point newPoint){
-
+  clock_t begin, end;
+  // begin = clock();
   euclideanDistance(trainingArray, trainingArraySize, newPoint);
+  // end = clock();
+  // std::cout << "euclidean distance: " << ((float)(end - begin)/CLOCKS_PER_SEC) << " seconds" << std::endl;
 
+  begin = clock();
   sort(trainingArray.begin(), trainingArray.end(), distanceComparison);
+  end = clock();
+  std::cout << "serial sort: " << ((float)(end - begin)/CLOCKS_PER_SEC) << " seconds" << std::endl;
 
   int freqNegOne = 0;
   int freqZero = 0;
   int freqOne = 0;
   // maybe parallelizable? based on k
+  // begin = clock();
   for (int i=0; i < k; i++){
     if (trainingArray[i].val == -1) {
       freqNegOne++;
@@ -46,6 +53,8 @@ int KNN(std::vector<Point> &trainingArray, int trainingArraySize, int k, Point n
       freqOne++;
     }
   }
+  // end = clock();
+  // std::cout << "frequency update: " << ((float)(end - begin)/CLOCKS_PER_SEC) << " seconds" << std::endl;
   if (freqNegOne > freqZero && freqNegOne > freqOne){
     return -1;
   }
@@ -88,20 +97,24 @@ int main() {
     trainingVector.push_back(p);
   }
 
-  clock_t begin = clock();
+  clock_t begin, end;
 
   for (int i=0;i<dataVector.size();i++){
-    int newLabel = KNN(trainingVector, trainingVector.size(), 10, dataVector[i]);
+    begin = clock();
+    int newLabel = KNN(trainingVector, trainingVector.size(), 1000, dataVector[i]);
+    end = clock();
+    std::cout << "Overall Serial time for k=1000: " << ((float)(end - begin)/CLOCKS_PER_SEC) << " seconds" << std::endl;
+
     dataVector[i].val = newLabel;
   }
 
-  clock_t end = clock();
 
-  std::cout << "Serial time for 12 points: " << ((float)(end - begin)/CLOCKS_PER_SEC) << " seconds" << std::endl;
 
+  // use to check correctness
+  /*
   for (int i=0; i < dataVector.size();i++){
     std::cout << dataVector[i].val << std::endl;
   }
-
+  */
   return 0;
 }

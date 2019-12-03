@@ -2,7 +2,7 @@ import random
 
 def makeTrainingData():
     with open("trainingData.txt", 'w') as output:
-        for x in range(100000):
+        for x in range(1000000):
             # negative one
             xVal = round(random.uniform(-10,-6), 2)
             yVal = round(random.uniform(6,10), 2)
@@ -20,7 +20,7 @@ def makeTrainingData():
 
 def makeTestData():
     with open("testData.txt", 'w') as output:
-        for x in range(4):
+        for x in range(2):
             # negative one
             xVal = round(random.uniform(-10,-6), 2)
             yVal = round(random.uniform(6,10), 2)
